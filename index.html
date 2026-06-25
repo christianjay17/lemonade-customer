@@ -3,92 +3,479 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lemonade Stand — Order Lookup</title>
+<title>Lemonade Stand — Cashier</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fffbf2; min-height: 100vh; }
-  .header { background: #EF9F27; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 12px; }
-  .header-emoji { font-size: 26px; }
-  .header-title { font-size: 19px; font-weight: 600; color: #412402; }
-  .header-sub { font-size: 12px; color: #633806; }
-  .container { max-width: 480px; margin: 0.875rem auto; padding: 0 0.75rem 2rem; }
+
+  /* ── PROFILE SELECT ── */
+  .profile-screen { position: fixed; inset: 0; background: #fffbf2; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; }
+  .profile-logo { font-size: 48px; margin-bottom: 10px; }
+  .profile-title { font-size: 20px; font-weight: 600; color: #412402; margin-bottom: 4px; }
+  .profile-sub { font-size: 14px; color: #888; margin-bottom: 32px; }
+  .profile-list { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
+  .profile-btn { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid #e8e0d0; background: #fff; font-size: 16px; font-weight: 500; color: #1a1a1a; cursor: pointer; display: flex; align-items: center; gap: 12px; -webkit-tap-highlight-color: transparent; }
+  .profile-btn:active { background: #FAEEDA; border-color: #EF9F27; }
+  .profile-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+
+  /* ── PIN SCREEN ── */
+  .pin-screen { position: fixed; inset: 0; background: #fffbf2; z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; }
+  .pin-screen.active { display: flex; }
+  .pin-back { position: absolute; top: 1.25rem; left: 1.25rem; background: none; border: none; font-size: 14px; color: #888; cursor: pointer; padding: 6px; }
+  .pin-logo { font-size: 40px; margin-bottom: 8px; }
+  .pin-title { font-size: 18px; font-weight: 600; color: #412402; margin-bottom: 4px; }
+  .pin-subtitle { font-size: 13px; color: #888; margin-bottom: 28px; text-align: center; }
+  .pin-dots { display: flex; gap: 14px; margin-bottom: 28px; }
+  .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #e8e0d0; background: #fff; transition: all 0.15s; }
+  .pin-dot.filled { background: #EF9F27; border-color: #EF9F27; }
+  .pin-dot.error { background: #c0392b; border-color: #c0392b; }
+  .pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 280px; }
+  .pin-key { height: 64px; border-radius: 12px; border: 1px solid #e8e0d0; background: #fff; font-size: 22px; font-weight: 500; color: #1a1a1a; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+  .pin-key:active { background: #FAEEDA; border-color: #EF9F27; }
+  .pin-key.del { font-size: 18px; color: #888; }
+  .pin-key.empty { border: none; background: transparent; cursor: default; }
+  .pin-error { font-size: 13px; color: #c0392b; margin-top: 14px; min-height: 18px; text-align: center; }
+  .pin-no-pin-note { font-size: 13px; color: #aaa; margin-top: 14px; text-align: center; }
+
+  /* ── HEADER ── */
+  .header { background: #EF9F27; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 10px; }
+  .header-emoji { font-size: 24px; }
+  .header-title { font-size: 17px; font-weight: 600; color: #412402; }
+  .header-sub { font-size: 11px; color: #633806; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .header-user { font-size: 12px; font-weight: 600; color: #412402; background: rgba(0,0,0,0.1); padding: 4px 10px; border-radius: 99px; }
+  .header-btn { background: rgba(0,0,0,0.12); border: none; border-radius: 8px; padding: 6px 10px; color: #412402; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; -webkit-tap-highlight-color: transparent; }
+  .header-btn:active { background: rgba(0,0,0,0.2); }
+
+  /* ── CONTAINER ── */
+  .container { max-width: 520px; margin: 0.875rem auto; padding: 0 0.75rem 2rem; }
   .card { background: #fff; border: 1px solid #e8e0d0; border-radius: 12px; padding: 1rem; margin-bottom: 0.875rem; }
   .section-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
-  .code-input { width: 100%; height: 68px; border-radius: 10px; border: 1px solid #e8e0d0; background: #fff; color: #1a1a1a; text-align: center; font-size: clamp(28px, 10vw, 36px); font-weight: 700; letter-spacing: 0.25em; font-family: 'Courier New', monospace; padding: 0 12px; margin-bottom: 12px; -webkit-appearance: none; }
-  .code-input:focus { outline: none; border-color: #EF9F27; box-shadow: 0 0 0 3px rgba(239,159,39,0.15); }
-  .lookup-btn { width: 100%; padding: 15px; border-radius: 8px; border: none; background: #EF9F27; color: #412402; font-size: 16px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .lookup-btn:active { background: #FAC775; }
-  .lookup-btn:disabled { opacity: 0.4; }
-  .error-msg { font-size: 14px; color: #c0392b; margin-top: 10px; text-align: center; display: none; }
-  .order-row { display: flex; justify-content: space-between; font-size: 15px; color: #444; padding: 7px 0; border-bottom: 1px solid #f0ebe0; }
-  .order-row:last-of-type { border-bottom: none; }
-  .order-total-row { display: flex; justify-content: space-between; font-size: 16px; font-weight: 600; color: #1a1a1a; padding-top: 10px; margin-top: 6px; border-top: 1px solid #e8e0d0; }
-  .payment-banner { display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-radius: 8px; margin-top: 12px; font-size: 14px; font-weight: 500; }
-  .banner-cash { background: #EAF3DE; color: #3B6D11; }
-  .banner-venmo { background: #E6F1FB; color: #185FA5; }
-  .banner-apple { background: #f0f0f0; color: #1a1a1a; }
-  .pay-btn { width: 100%; padding: 15px; border-radius: 8px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; -webkit-tap-highlight-color: transparent; }
-  .pay-btn-venmo { background: #3D95CE; color: #fff; }
-  .pay-btn-venmo:active { background: #2d7aad; }
-  .pay-btn-apple { background: #000; color: #fff; }
-  .pay-btn-apple:active { background: #333; }
-  .success-box { text-align: center; padding: 2rem 1rem; }
-  .success-big { font-size: 52px; margin-bottom: 12px; }
-  .success-box h2 { font-size: 22px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
-  .success-box p { font-size: 15px; color: #666; line-height: 1.5; }
-  .another-btn { margin-top: 1.5rem; padding: 12px 28px; border-radius: 8px; border: 1px solid #ddd; background: #fff; font-size: 15px; color: #333; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .another-btn:active { background: #f5f5f5; }
-  #orderView, #successView { display: none; }
+
+  /* ── MENU ── */
+  .menu-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media (min-width: 400px) { .menu-grid { grid-template-columns: repeat(2, 1fr); } }
+  .menu-item { border: 1px solid #e8e0d0; border-radius: 8px; padding: 12px; display: flex; align-items: center; justify-content: space-between; background: #fff; -webkit-tap-highlight-color: transparent; }
+  .menu-item:active { background: #fffbf2; }
+  .menu-left { display: flex; align-items: center; gap: 10px; font-size: 15px; color: #1a1a1a; flex: 1; min-width: 0; }
+  .menu-left span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .menu-price { font-size: 14px; color: #854F0B; font-weight: 600; white-space: nowrap; margin-right: 6px; }
+  .menu-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .add-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #ddd; background: #fff; cursor: pointer; font-size: 22px; color: #333; display: flex; align-items: center; justify-content: center; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
+  .add-btn:active { background: #FAEEDA; border-color: #EF9F27; }
+  .remove-item-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #f0c0b0; background: #fff5f3; cursor: pointer; font-size: 13px; color: #c0392b; display: flex; align-items: center; justify-content: center; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
+  .remove-item-btn:active { background: #fde8e4; }
+
+  /* ── CUSTOM ITEM FORM ── */
+  .custom-form-wrap { margin-top: 12px; border-top: 1px solid #f0ebe0; padding-top: 12px; }
+  .custom-inputs { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .custom-inputs input { width: 100%; height: 46px; border-radius: 8px; border: 1px solid #e8e0d0; background: #fff; color: #1a1a1a; padding: 0 12px; font-size: 16px; font-family: inherit; }
+  .custom-inputs input:focus { outline: none; border-color: #EF9F27; box-shadow: 0 0 0 2px rgba(239,159,39,0.15); }
+  .custom-inputs input::placeholder { color: #bbb; }
+  .custom-row2 { display: flex; gap: 8px; }
+  .custom-row2 input { flex: 1; }
+  .save-custom-btn { height: 46px; padding: 0 18px; border-radius: 8px; border: none; background: #EF9F27; color: #412402; font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
+  .save-custom-btn:active { background: #FAC775; }
+  .save-custom-btn:disabled { opacity: 0.4; }
+  .custom-error { font-size: 13px; color: #c0392b; margin-top: 4px; display: none; }
+
+  /* ── CART ── */
+  .cart { background: #faf6ee; border-radius: 8px; padding: 12px; min-height: 56px; }
+  .cart-empty { font-size: 14px; color: #999; text-align: center; padding: 8px 0; }
+  .cart-item { display: flex; align-items: center; justify-content: space-between; font-size: 15px; color: #1a1a1a; padding: 8px 0; border-bottom: 1px solid #ede5d8; gap: 6px; }
+  .cart-item:last-of-type { border-bottom: none; }
+  .cart-item-name { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; font-size: 14px; }
+  .cart-item-name span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cart-item-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .ctrl-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #ddd; background: #fff; cursor: pointer; font-size: 18px; color: #333; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+  .ctrl-btn:active { background: #f5f5f5; }
+  .cart-qty { font-size: 15px; min-width: 20px; text-align: center; }
+  .cart-sub { font-size: 14px; color: #888; min-width: 48px; text-align: right; }
+  .cart-total { display: flex; justify-content: space-between; font-size: 15px; color: #555; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ede5d8; }
+  .cart-grand-total { display: flex; justify-content: space-between; font-size: 17px; font-weight: 700; color: #1a1a1a; margin-top: 6px; padding-top: 6px; border-top: 1px solid #ede5d8; }
+
+  /* ── TIP ── */
+  .tip-section { margin-top: 12px; border-top: 1px solid #f0ebe0; padding-top: 12px; }
+  .tip-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+  .tip-preset { border: 1px solid #e8e0d0; border-radius: 8px; padding: 9px 4px; cursor: pointer; text-align: center; background: #fff; font-size: 14px; font-weight: 500; color: #1a1a1a; -webkit-tap-highlight-color: transparent; }
+  .tip-preset:active { background: #fffbf2; }
+  .tip-preset.selected { border: 2px solid #EF9F27; background: #FAEEDA; color: #412402; font-weight: 600; }
+  .tip-custom-row { display: flex; align-items: center; gap: 8px; }
+  .tip-custom-input { flex: 1; height: 40px; border-radius: 8px; border: 1px solid #e8e0d0; background: #fff; color: #1a1a1a; padding: 0 10px; font-size: 15px; font-family: inherit; }
+  .tip-custom-input:focus { outline: none; border-color: #EF9F27; box-shadow: 0 0 0 2px rgba(239,159,39,0.15); }
+  .tip-custom-input::placeholder { color: #bbb; }
+  .tip-lbl { font-size: 13px; color: #888; white-space: nowrap; }
+
+  /* ── PAYMENT ── */
+  .payment-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .pay-option { border: 1px solid #e8e0d0; border-radius: 8px; padding: 14px 6px; cursor: pointer; text-align: center; background: #fff; -webkit-tap-highlight-color: transparent; }
+  .pay-option:active { background: #fffbf2; }
+  .pay-option.selected { border: 2px solid #EF9F27; background: #FAEEDA; }
+  .pay-icon { font-size: 24px; margin-bottom: 5px; }
+  .pay-name { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+  .cash-confirm { background: #faf6ee; border-radius: 8px; padding: 14px; margin-top: 10px; display: none; }
+  .cash-confirm p { font-size: 15px; color: #1a1a1a; margin-bottom: 12px; }
+  .cash-btns { display: flex; gap: 8px; }
+  .cash-yes { flex: 1; padding: 13px; border-radius: 8px; border: none; background: #EF9F27; color: #412402; font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .cash-yes:active { background: #FAC775; }
+  .cash-no { flex: 1; padding: 13px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #333; font-size: 15px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .cash-no:active { background: #f5f5f5; }
+
+  /* ── GENERATE ── */
+  .generate-btn { width: 100%; padding: 16px; border-radius: 10px; border: none; background: #EF9F27; color: #412402; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 4px; -webkit-tap-highlight-color: transparent; }
+  .generate-btn:active { background: #FAC775; }
+  .generate-btn:disabled { opacity: 0.35; }
+  .status { font-size: 13px; color: #999; text-align: center; margin-top: 8px; min-height: 20px; }
+
+  /* ── QR CODE ── */
+  .qr-wrap { margin-top: 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .qr-box { background: #fff; border-radius: 12px; padding: 14px; border: 1px solid #e8e0d0; display: inline-block; }
+  .qr-hint { font-size: 13px; color: #854F0B; text-align: center; }
+  .qr-or { font-size: 12px; color: #bbb; margin: 4px 0; }
+  .qr-code-text { font-size: 11px; color: #aaa; font-family: monospace; word-break: break-all; text-align: center; }
+
+  /* ── CODE DISPLAY ── */
+  .code-display { background: #FAEEDA; border: 2px solid #EF9F27; border-radius: 12px; padding: 1.5rem 1rem; text-align: center; }
+  .code-label { font-size: 12px; color: #854F0B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .code-value { font-size: clamp(40px, 16vw, 60px); font-weight: 700; letter-spacing: 0.2em; color: #412402; font-family: 'Courier New', monospace; margin-bottom: 8px; }
+  .code-summary { font-size: 13px; color: #633806; margin-bottom: 6px; word-break: break-word; }
+  .code-badge { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+  .badge-cash { background: #C0DD97; color: #173404; }
+  .badge-digital { background: #B5D4F4; color: #042C53; }
+  .cash-note { background: #EAF3DE; border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 13px; color: #3B6D11; display: flex; align-items: center; gap: 8px; }
+  .new-order-btn { width: 100%; margin-top: 10px; padding: 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; font-size: 15px; color: #333; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .new-order-btn:active { background: #f5f5f5; }
+  #codeView { display: none; }
+
+  /* ── MODAL BASE ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; display: none; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 16px 16px 0 0; width: 100%; max-width: 520px; max-height: 85vh; display: flex; flex-direction: column; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1rem 0.75rem; border-bottom: 1px solid #f0ebe0; flex-shrink: 0; }
+  .modal-title { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+  .modal-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: #f0ebe0; cursor: pointer; font-size: 18px; color: #666; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+  .modal-close:active { background: #e0d8cc; }
+
+  /* ── HISTORY MODAL ── */
+  .modal-summary { display: flex; gap: 8px; padding: 0.75rem 1rem; border-bottom: 1px solid #f0ebe0; background: #fffbf2; flex-shrink: 0; }
+  .summary-stat { text-align: center; flex: 1; }
+  .summary-num { font-size: 18px; font-weight: 700; color: #412402; }
+  .summary-lbl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+  .modal-body { overflow-y: auto; padding: 0.75rem 1rem 0.5rem; flex: 1; }
+  .history-empty { font-size: 14px; color: #999; text-align: center; padding: 2rem 0; }
+  .history-item { border: 1px solid #e8e0d0; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+  .history-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .history-code { font-family: 'Courier New', monospace; font-size: 14px; font-weight: 700; color: #412402; letter-spacing: 0.1em; }
+  .history-meta { display: flex; align-items: center; gap: 6px; }
+  .history-time { font-size: 11px; color: #aaa; }
+  .history-who { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 99px; }
+  .history-items-list { font-size: 13px; color: #555; margin-bottom: 6px; line-height: 1.6; }
+  .history-footer { display: flex; align-items: center; justify-content: space-between; }
+  .history-total { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .history-badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+  .hbadge-paid { background: #C0DD97; color: #173404; }
+  .hbadge-pending { background: #FDE8B0; color: #7A4F00; }
+  .hbadge-cash { background: #C0DD97; color: #173404; }
+  .loading-msg { font-size: 14px; color: #aaa; text-align: center; padding: 2rem 0; }
+  .clear-history-btn { width: 100%; margin-top: 4px; padding: 12px; border-radius: 8px; border: 1px solid #f0c0b0; background: #fff5f3; color: #c0392b; font-size: 14px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .clear-history-btn:active { background: #fde8e4; }
+  .confirm-clear { background: #fff5f3; border: 1px solid #f0c0b0; border-radius: 10px; padding: 14px; margin-top: 8px; display: none; }
+  .confirm-clear p { font-size: 14px; color: #1a1a1a; margin-bottom: 12px; }
+  .confirm-btns { display: flex; gap: 8px; }
+  .confirm-yes { flex: 1; padding: 11px; border-radius: 8px; border: none; background: #c0392b; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .confirm-yes:active { background: #a93226; }
+  .confirm-no { flex: 1; padding: 11px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #333; font-size: 14px; cursor: pointer; }
+  .confirm-no:active { background: #f5f5f5; }
+  .modal-footer { padding: 0.5rem 1rem 1rem; flex-shrink: 0; }
+
+  /* ── ADMIN MODAL ── */
+  .admin-section { margin-bottom: 1.25rem; }
+  .admin-section-title { font-size: 13px; font-weight: 600; color: #412402; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f0ebe0; }
+  .account-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f9f4ec; }
+  .account-row:last-child { border-bottom: none; }
+  .account-info { display: flex; align-items: center; gap: 10px; }
+  .account-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .account-name { font-size: 15px; font-weight: 500; color: #1a1a1a; }
+  .account-pin-status { font-size: 12px; color: #aaa; }
+  .set-pin-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid #e8e0d0; background: #fff; font-size: 13px; font-weight: 500; color: #412402; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .set-pin-btn:active { background: #FAEEDA; border-color: #EF9F27; }
+  .account-btns { display: flex; gap: 6px; align-items: center; }
+  .delete-acc-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #f0c0b0; background: #fff5f3; color: #c0392b; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; flex-shrink: 0; }
+  .delete-acc-btn:active { background: #fde8e4; }
+  .delete-confirm-row { background: #fff5f3; border: 1px solid #f0c0b0; border-radius: 8px; padding: 10px 12px; margin-top: 6px; display: none; }
+  .delete-confirm-row p { font-size: 13px; color: #1a1a1a; margin-bottom: 8px; }
+  .delete-confirm-btns { display: flex; gap: 6px; }
+  .delete-yes { flex: 1; padding: 8px; border-radius: 8px; border: none; background: #c0392b; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .delete-yes:active { background: #a93226; }
+  .delete-no { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #333; font-size: 13px; cursor: pointer; }
+  .delete-no:active { background: #f5f5f5; }
+  .add-account-form { display: flex; flex-direction: column; gap: 8px; }
+  .add-account-form input { width: 100%; height: 44px; border-radius: 8px; border: 1px solid #e8e0d0; background: #fff; color: #1a1a1a; padding: 0 12px; font-size: 15px; font-family: inherit; }
+  .add-account-form input:focus { outline: none; border-color: #EF9F27; box-shadow: 0 0 0 2px rgba(239,159,39,0.15); }
+  .add-account-form input::placeholder { color: #bbb; }
+  .add-account-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #EF9F27; color: #412402; font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .add-account-btn:active { background: #FAC775; }
+  .add-account-btn:disabled { opacity: 0.4; }
+  .admin-error { font-size: 13px; color: #c0392b; margin-top: 4px; display: none; }
+
+  /* ── SET PIN MODAL ── */
+  .set-pin-dots { display: flex; gap: 12px; justify-content: center; margin: 16px 0; }
+  .set-pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
+  .set-pin-key { height: 56px; border-radius: 10px; border: 1px solid #e8e0d0; background: #fff; font-size: 20px; font-weight: 500; color: #1a1a1a; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+  .set-pin-key:active { background: #FAEEDA; border-color: #EF9F27; }
+  .set-pin-key.del { font-size: 16px; color: #888; }
+  .set-pin-key.empty { border: none; background: transparent; cursor: default; }
+  .set-pin-label { font-size: 14px; color: #555; text-align: center; margin-bottom: 4px; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-emoji">🍋</div>
-  <div>
-    <div class="header-title">Lemonade Stand</div>
-    <div class="header-sub">Order Lookup</div>
+<!-- Profile Select Screen -->
+<div class="profile-screen" id="profileScreen">
+  <div class="profile-logo">🍋</div>
+  <div class="profile-title">Lemonade Stand</div>
+  <div class="profile-sub">Who's on the register?</div>
+  <div class="profile-list" id="profileList"></div>
+</div>
+
+<!-- PIN Screen -->
+<div class="pin-screen" id="pinScreen">
+  <button class="pin-back" onclick="goBackToProfiles()">← Back</button>
+  <div class="pin-logo" id="pinLogo">🍋</div>
+  <div class="pin-title" id="pinName">Name</div>
+  <div class="pin-subtitle" id="pinSubtitle">Enter your PIN</div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="dot0"></div>
+    <div class="pin-dot" id="dot1"></div>
+    <div class="pin-dot" id="dot2"></div>
+    <div class="pin-dot" id="dot3"></div>
+    <div class="pin-dot" id="dot4"></div>
+    <div class="pin-dot" id="dot5"></div>
+    <div class="pin-dot" id="dot6"></div>
+    <div class="pin-dot" id="dot7"></div>
+  </div>
+  <div class="pin-keypad">
+    <div class="pin-key" onclick="pinPress('1')">1</div>
+    <div class="pin-key" onclick="pinPress('2')">2</div>
+    <div class="pin-key" onclick="pinPress('3')">3</div>
+    <div class="pin-key" onclick="pinPress('4')">4</div>
+    <div class="pin-key" onclick="pinPress('5')">5</div>
+    <div class="pin-key" onclick="pinPress('6')">6</div>
+    <div class="pin-key" onclick="pinPress('7')">7</div>
+    <div class="pin-key" onclick="pinPress('8')">8</div>
+    <div class="pin-key" onclick="pinPress('9')">9</div>
+    <div class="pin-key empty"></div>
+    <div class="pin-key" onclick="pinPress('0')">0</div>
+    <div class="pin-key del" onclick="pinDelete()">⌫</div>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+</div>
+
+<!-- Main App (hidden until logged in) -->
+<div id="mainApp" style="display:none;">
+
+  <div class="header">
+    <div class="header-emoji">🍋</div>
+    <div>
+      <div class="header-title">Lemonade Stand</div>
+      <div class="header-sub">Cashier</div>
+    </div>
+    <div class="header-right">
+      <span class="header-user" id="headerUser"></span>
+      <button class="header-btn" onclick="openHistory()">📋</button>
+      <button class="header-btn" id="adminBtn" onclick="openAdmin()" style="display:none;">⚙️</button>
+      <button class="header-btn" onclick="logout()">↩</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="buildView">
+      <div class="card">
+        <p class="section-label">Menu items</p>
+        <div class="menu-grid" id="menuGrid"></div>
+        <div class="custom-form-wrap">
+          <p class="section-label">Add custom item</p>
+          <div class="custom-inputs">
+            <input type="text" id="customName" placeholder="Item name" maxlength="30" autocomplete="off">
+            <div class="custom-row2">
+              <input type="number" id="customPrice" placeholder="Price (e.g. 2.50)" min="0.01" step="0.01" inputmode="decimal">
+              <button class="save-custom-btn" id="saveCustomBtn" onclick="saveCustomItem()">Add</button>
+            </div>
+          </div>
+          <div class="custom-error" id="customError">Please enter a name and valid price.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-label">Order</p>
+        <div class="cart" id="cart">
+          <div class="cart-empty">No items yet — add something above</div>
+        </div>
+        <div class="tip-section" id="tipSection" style="display:none;">
+          <p class="section-label">Tip</p>
+          <div class="tip-presets">
+            <div class="tip-preset" data-tip="0" onclick="selectTip(this,0)">No tip</div>
+            <div class="tip-preset" data-tip="10" onclick="selectTip(this,10)">10%</div>
+            <div class="tip-preset" data-tip="15" onclick="selectTip(this,15)">15%</div>
+            <div class="tip-preset" data-tip="20" onclick="selectTip(this,20)">20%</div>
+          </div>
+          <div class="tip-custom-row">
+            <span class="tip-lbl">Custom $</span>
+            <input class="tip-custom-input" id="tipCustom" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" oninput="onCustomTip()">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-label">Payment method</p>
+        <div class="payment-options">
+          <div class="pay-option" id="opt-venmo" onclick="selectPayment('venmo')">
+            <div class="pay-icon">💙</div>
+            <div class="pay-name">Venmo</div>
+          </div>
+          <div class="pay-option" id="opt-cash" onclick="selectPayment('cash')">
+            <div class="pay-icon">💵</div>
+            <div class="pay-name">Cash</div>
+          </div>
+        </div>
+        <div class="cash-confirm" id="cashConfirm">
+          <p>Has the customer already paid <strong id="cashAmount"></strong> in cash?</p>
+          <div class="cash-btns">
+            <button class="cash-yes" onclick="confirmCash(true)">Yes, cash received</button>
+            <button class="cash-no" onclick="confirmCash(false)">No, go back</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="generate-btn" id="genBtn" onclick="generateCode()" disabled>Generate order code</button>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div id="codeView">
+      <div class="card">
+        <div class="code-display">
+          <div class="code-label">Scan or share with customer</div>
+          <div class="qr-wrap">
+            <div class="qr-box"><canvas id="qrCanvas"></canvas></div>
+            <div class="qr-hint">📷 Customer scans this to pay</div>
+          </div>
+          <div class="qr-or">— or share the code manually —</div>
+          <div class="code-value" id="generatedCode">—</div>
+          <div class="code-summary" id="codeSummary"></div>
+          <span class="code-badge" id="codeBadge"></span>
+        </div>
+        <div class="cash-note" id="cashReceivedNote" style="display:none;">
+          ✅ Cash already collected — this code is just for their receipt.
+        </div>
+        <button class="new-order-btn" onclick="resetCashier()">+ Start new order</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="historyModal" onclick="handleOverlayClick(event,'historyModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="historyTitle">Order History</span>
+      <button class="modal-close" onclick="closeHistory()">✕</button>
+    </div>
+    <div class="modal-summary" id="historySummary" style="display:none;">
+      <div class="summary-stat"><div class="summary-num" id="summaryOrders">0</div><div class="summary-lbl">Orders</div></div>
+      <div class="summary-stat"><div class="summary-num" id="summaryRevenue">$0</div><div class="summary-lbl">Revenue</div></div>
+      <div class="summary-stat"><div class="summary-num" id="summaryPaid">0</div><div class="summary-lbl">Paid</div></div>
+      <div class="summary-stat"><div class="summary-num" id="summaryPending">0</div><div class="summary-lbl">Pending</div></div>
+    </div>
+    <div class="modal-body" id="historyBody"><div class="loading-msg">Loading...</div></div>
+    <div class="modal-footer">
+      <button class="clear-history-btn" id="clearBtn" onclick="showClearConfirm()" style="display:none;">🗑️ Clear history</button>
+      <div class="confirm-clear" id="confirmClear">
+        <p>Are you sure? This permanently deletes the shown orders.</p>
+        <div class="confirm-btns">
+          <button class="confirm-yes" onclick="clearHistory()">Yes, delete</button>
+          <button class="confirm-no" onclick="hideClearConfirm()">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="container">
-  <div id="lookupView">
-    <div class="card">
-      <p class="section-label">Enter your order code</p>
-      <input class="code-input" id="codeInput" type="text" placeholder="A1B2" maxlength="4" autocomplete="off" autocapitalize="characters" oninput="this.value=this.value.toUpperCase()">
-      <button class="lookup-btn" id="lookupBtn" onclick="lookupCode()">Look up order</button>
-      <div class="error-msg" id="errorMsg"></div>
+<!-- Admin Modal -->
+<div class="modal-overlay" id="adminModal" onclick="handleOverlayClick(event,'adminModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⚙️ Admin Panel</span>
+      <button class="modal-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="admin-section">
+        <div class="admin-section-title">Accounts & PINs</div>
+        <div id="accountsList"></div>
+      </div>
+      <div class="admin-section">
+        <div class="admin-section-title">Add New Account</div>
+        <div class="add-account-form">
+          <input type="text" id="newAccountName" placeholder="Name" maxlength="20" autocomplete="off">
+          <button class="add-account-btn" id="addAccountBtn" onclick="addAccount()">Add Account</button>
+          <div class="admin-error" id="adminError"></div>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
-  <div id="orderView">
-    <div class="card">
-      <p class="section-label">Your order</p>
-      <div id="orderLines"></div>
-      <div class="order-total-row">
-        <span>Total</span>
-        <span id="orderTotal"></span>
-      </div>
-      <div class="payment-banner" id="paymentBanner"></div>
-      <div id="payBtnWrap"></div>
+<!-- Set PIN Modal -->
+<div class="modal-overlay" id="setPinModal" onclick="handleOverlayClick(event,'setPinModal')">
+  <div class="modal" style="max-height:70vh;">
+    <div class="modal-header">
+      <span class="modal-title" id="setPinTitle">Set PIN</span>
+      <button class="modal-close" onclick="closeSetPin()">✕</button>
     </div>
-  </div>
-
-  <div id="successView">
-    <div class="card">
-      <div class="success-box">
-        <div class="success-big" id="successEmoji">🍋</div>
-        <h2 id="successTitle">All set!</h2>
-        <p id="successMsg">Enjoy your lemonade!</p>
-        <button class="another-btn" onclick="resetCustomer()">Start over</button>
+    <div class="modal-body" style="align-items:center;display:flex;flex-direction:column;padding:1rem;">
+      <div class="set-pin-label" id="setPinLabel">Enter new PIN</div>
+      <div class="set-pin-dots" id="setPinDots">
+        <div class="pin-dot" id="spd0"></div>
+        <div class="pin-dot" id="spd1"></div>
+        <div class="pin-dot" id="spd2"></div>
+        <div class="pin-dot" id="spd3"></div>
       </div>
+      <div class="set-pin-keypad" style="width:100%;max-width:260px;">
+        <div class="set-pin-key" onclick="spPress('1')">1</div>
+        <div class="set-pin-key" onclick="spPress('2')">2</div>
+        <div class="set-pin-key" onclick="spPress('3')">3</div>
+        <div class="set-pin-key" onclick="spPress('4')">4</div>
+        <div class="set-pin-key" onclick="spPress('5')">5</div>
+        <div class="set-pin-key" onclick="spPress('6')">6</div>
+        <div class="set-pin-key" onclick="spPress('7')">7</div>
+        <div class="set-pin-key" onclick="spPress('8')">8</div>
+        <div class="set-pin-key" onclick="spPress('9')">9</div>
+        <div class="set-pin-key empty"></div>
+        <div class="set-pin-key" onclick="spPress('0')">0</div>
+        <div class="set-pin-key del" onclick="spDelete()">⌫</div>
+      </div>
+      <div class="pin-error" id="setPinError" style="margin-top:10px;"></div>
     </div>
   </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs, orderBy, query, deleteDoc, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // QR code generator
+  const CUSTOMER_URL = 'https://lemonade-customer.netlify.app';
+
+  function generateQR(text, canvasId, size=200) {
+    // Use QRServer API to generate QR as image on canvas
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    canvas.width = size; canvas.height = size;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => ctx.drawImage(img, 0, 0, size, size);
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&bgcolor=ffffff&color=412402&margin=2`;
+  }
 
   const firebaseConfig = {
     apiKey: "AIzaSyBv5S44GU9ESCv-gypE7ujawsz5Je0935U",
@@ -98,108 +485,529 @@
     messagingSenderId: "190999159050",
     appId: "1:190999159050:web:894ae02547b1e59fd59af3"
   };
-
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  let currentCode = null;
-  let currentOrder = null;
+  // ── STATE ──
+  let MENU = [{ emoji: '🍋', name: 'Classic Lemonade', price: 1.50, custom: false }];
+  let cart = {};
+  let selectedPayment = null;
+  let cashConfirmed = false;
+  let tipAmount = 0;
+  let currentUser = null; // { id, name, color, emoji, isAdmin }
+  let accounts = [];
+  let selectedProfileId = null;
+  let pinEntry = '';
+  let spEntry = '';
+  let spTargetId = '';
+  let spStep = 'enter'; // 'enter' | 'confirm'
+  let spFirstPin = '';
 
-  window.lookupCode = async () => {
-    const code = document.getElementById('codeInput').value.trim().toUpperCase();
-    const errEl = document.getElementById('errorMsg');
-    const btn = document.getElementById('lookupBtn');
-    if (code.length < 4) { errEl.textContent = 'Please enter a 4-character code.'; errEl.style.display = 'block'; return; }
-    btn.disabled = true; btn.textContent = 'Looking up...'; errEl.style.display = 'none';
+  const ADMIN_PIN = '03172013';
+  const COLORS = ['#E8A838','#3D95CE','#639922','#9B59B6','#E74C3C','#1ABC9C'];
+  const EMOJIS = ['👤','😊','⭐','🌟','🎯','🔥'];
+
+  // ── ACCOUNTS ──
+  const CACHE_KEY = 'cn_lemonade_accounts';
+
+  async function loadAccounts() {
+    // 1. Show cached accounts instantly if available
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try { accounts = JSON.parse(cached); renderProfiles(); } catch(e) {}
+    }
+    // 2. Fetch from Firebase in background
     try {
-      const snap = await getDoc(doc(db, 'orders', code));
-      if (!snap.exists()) {
-        errEl.textContent = 'Code not found — double-check with the cashier.';
-        errEl.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Look up order'; return;
-      }
-      currentCode = code; currentOrder = snap.data();
-
-      if (currentOrder.status === 'paid' && !currentOrder.cashPaid) {
-        showSuccess('✅', 'Already paid!', 'This order has already been paid. Enjoy your lemonade! 🍋');
-        return;
-      }
-
-      let linesHtml = '';
-      Object.values(currentOrder.items).forEach(item => {
-        linesHtml += `<div class="order-row"><span>${item.emoji} ${item.name} ×${item.qty}</span><span>$${(item.price * item.qty).toFixed(2)}</span></div>`;
-      });
-      document.getElementById('orderLines').innerHTML = linesHtml;
-      document.getElementById('orderTotal').textContent = '$' + currentOrder.total.toFixed(2);
-
-      const banner = document.getElementById('paymentBanner');
-      const btnWrap = document.getElementById('payBtnWrap');
-      const total = currentOrder.total.toFixed(2);
-
-      if (currentOrder.cashPaid) {
-        banner.className = 'payment-banner banner-cash';
-        banner.innerHTML = '✅ Cash already paid — you\'re all set!';
-        btnWrap.innerHTML = '';
-      } else if (currentOrder.payment === 'venmo') {
-        banner.className = 'payment-banner banner-venmo';
-        banner.innerHTML = '💙 Pay with Venmo';
-        btnWrap.innerHTML = `<button class="pay-btn pay-btn-venmo" onclick="window.handlePay('venmo')">Open Venmo — $${total}</button>`;
+      const snap = await getDoc(doc(db, 'config', 'accounts'));
+      if (snap.exists() && snap.data().list) {
+        accounts = snap.data().list;
       } else {
-        banner.className = 'payment-banner banner-apple';
-        banner.innerHTML = '🍎 Pay with Apple Pay';
-        btnWrap.innerHTML = `<button class="pay-btn pay-btn-apple" onclick="window.handlePay('apple')">Pay $${total}</button>`;
+        accounts = [
+          { id: 'nolan', name: 'Nolan', color: '#3D95CE', emoji: '👤', pin: null },
+          { id: 'christian', name: 'Christian', color: '#639922', emoji: '👤', pin: null },
+        ];
+        await saveAccounts();
       }
+      localStorage.setItem(CACHE_KEY, JSON.stringify(accounts));
+    } catch(e) { console.error(e); }
+    // Re-render with fresh data (no flicker if same data)
+    renderProfiles();
+  }
 
-      document.getElementById('lookupView').style.display = 'none';
-      document.getElementById('orderView').style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Look up order';
-    } catch (e) {
-      errEl.textContent = 'Something went wrong. Check your connection and try again.';
-      errEl.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Look up order';
+  async function saveAccounts() {
+    await setDoc(doc(db, 'config', 'accounts'), { list: accounts }, { merge: true });
+    localStorage.setItem(CACHE_KEY, JSON.stringify(accounts));
+  }
+
+  function renderProfiles() {
+    const list = document.getElementById('profileList');
+    list.innerHTML = '';
+    accounts.forEach(acc => {
+      const btn = document.createElement('button');
+      btn.className = 'profile-btn';
+      btn.innerHTML = `<div class="profile-avatar" style="background:${acc.color};color:#fff;">${acc.name[0].toUpperCase()}</div><span>${acc.name}</span>`;
+      btn.onclick = () => selectProfile(acc.id);
+      list.appendChild(btn);
+    });
+    // Admin button
+    const adminBtn = document.createElement('button');
+    adminBtn.className = 'profile-btn';
+    adminBtn.innerHTML = `<div class="profile-avatar" style="background:#412402;color:#EF9F27;">A</div><span>Admin</span>`;
+    adminBtn.onclick = () => selectProfile('admin');
+    list.appendChild(adminBtn);
+  }
+
+  function selectProfile(id) {
+    selectedProfileId = id;
+    pinEntry = '';
+    updatePinDots();
+    document.getElementById('pinError').textContent = '';
+
+    if (id === 'admin') {
+      document.getElementById('pinName').textContent = 'Admin';
+      document.getElementById('pinLogo').textContent = '🔐';
+      document.getElementById('pinSubtitle').textContent = 'Enter admin PIN';
+      showPinDots(8);
+    } else {
+      const acc = accounts.find(a => a.id === id);
+      document.getElementById('pinName').textContent = acc.name;
+      document.getElementById('pinLogo').textContent = '🍋';
+      if (!acc.pin) {
+        document.getElementById('pinSubtitle').textContent = 'No PIN set — ask Admin to set one';
+      } else {
+        document.getElementById('pinSubtitle').textContent = 'Enter your PIN';
+      }
+      showPinDots(4);
+    }
+    document.getElementById('profileScreen').style.display = 'none';
+    document.getElementById('pinScreen').classList.add('active');
+  }
+
+  function showPinDots(count) {
+    const container = document.getElementById('pinDots');
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const d = document.createElement('div');
+      d.className = 'pin-dot';
+      d.id = 'dot' + i;
+      container.appendChild(d);
+    }
+  }
+
+  window.goBackToProfiles = () => {
+    document.getElementById('pinScreen').classList.remove('active');
+    document.getElementById('profileScreen').style.display = 'flex';
+    pinEntry = '';
+  };
+
+  window.pinPress = (digit) => {
+    const maxLen = selectedProfileId === 'admin' ? 8 : 4;
+    if (pinEntry.length >= maxLen) return;
+    pinEntry += digit;
+    updatePinDots();
+    if (pinEntry.length === maxLen) setTimeout(checkPin, 150);
+  };
+
+  window.pinDelete = () => {
+    pinEntry = pinEntry.slice(0, -1);
+    updatePinDots();
+    document.getElementById('pinError').textContent = '';
+  };
+
+  function updatePinDots() {
+    const maxLen = selectedProfileId === 'admin' ? 8 : 4;
+    for (let i = 0; i < maxLen; i++) {
+      const dot = document.getElementById('dot' + i);
+      if (!dot) continue;
+      dot.classList.toggle('filled', i < pinEntry.length);
+      dot.classList.remove('error');
+    }
+  }
+
+  function checkPin() {
+    let correct = false;
+    if (selectedProfileId === 'admin') {
+      correct = pinEntry === ADMIN_PIN;
+    } else {
+      const acc = accounts.find(a => a.id === selectedProfileId);
+      if (!acc.pin) {
+        // No PIN set — show error
+        document.getElementById('pinError').textContent = 'No PIN set. Ask Admin to set one first.';
+        pinEntry = ''; updatePinDots(); return;
+      }
+      correct = pinEntry === acc.pin;
+    }
+
+    if (correct) {
+      document.getElementById('pinScreen').classList.remove('active');
+      if (selectedProfileId === 'admin') {
+        currentUser = { id: 'admin', name: 'Admin', color: '#412402', isAdmin: true };
+        document.getElementById('adminBtn').style.display = 'flex';
+      } else {
+        const acc = accounts.find(a => a.id === selectedProfileId);
+        currentUser = { ...acc, isAdmin: false };
+        document.getElementById('adminBtn').style.display = 'none';
+      }
+      document.getElementById('headerUser').textContent = currentUser.name;
+      document.getElementById('mainApp').style.display = 'block';
+      loadCustomItems();
+    } else {
+      const maxLen = selectedProfileId === 'admin' ? 8 : 4;
+      for (let i = 0; i < maxLen; i++) { const d = document.getElementById('dot'+i); if(d) d.classList.add('error'); }
+      document.getElementById('pinError').textContent = 'Incorrect PIN, try again';
+      setTimeout(() => { pinEntry = ''; updatePinDots(); document.getElementById('pinError').textContent = ''; }, 1000);
+    }
+  }
+
+  window.logout = () => {
+    currentUser = null; cart = {}; selectedPayment = null; cashConfirmed = false; tipAmount = 0;
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('buildView').style.display = 'block';
+    document.getElementById('codeView').style.display = 'none';
+    document.getElementById('profileScreen').style.display = 'flex';
+    pinEntry = ''; selectedProfileId = null;
+    renderCart();
+  };
+
+  // ── MENU ──
+  async function loadCustomItems() {
+    MENU = [{ emoji: '🍋', name: 'Classic Lemonade', price: 1.50, custom: false }];
+    try {
+      const snap = await getDoc(doc(db, 'config', 'menu'));
+      if (snap.exists() && snap.data().customItems) {
+        snap.data().customItems.forEach(item => MENU.push({ ...item, custom: true }));
+      }
+    } catch(e) { console.error(e); }
+    renderMenu();
+  }
+
+  function renderMenu() {
+    document.getElementById('menuGrid').innerHTML = MENU.map((item, i) => `
+      <div class="menu-item">
+        <div class="menu-left"><span>${item.emoji}</span><span>${item.name}</span></div>
+        <div class="menu-actions">
+          <span class="menu-price">$${item.price.toFixed(2)}</span>
+          ${item.custom ? `<div class="remove-item-btn" onclick="window._removeItem(${i})">✕</div>` : ''}
+          <div class="add-btn" onclick="window._addToCart(${i})">+</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function getTotal() { return Object.keys(cart).reduce((s,i) => s + MENU[i].price * cart[i], 0); }
+  function getGrandTotal() { return getTotal() + tipAmount; }
+
+  function renderCart() {
+    const el = document.getElementById('cart');
+    const keys = Object.keys(cart);
+    if (!keys.length) { el.innerHTML = '<div class="cart-empty">No items yet — add something above</div>'; document.getElementById('tipSection').style.display='none'; updateBtn(); return; }
+    let html = '';
+    keys.forEach(i => {
+      const qty = cart[i]; const sub = MENU[i].price * qty;
+      html += `<div class="cart-item">
+        <div class="cart-item-name"><span>${MENU[i].emoji}</span><span>${MENU[i].name}</span></div>
+        <div class="cart-item-controls">
+          <div class="ctrl-btn" onclick="window._changeCart(${i},-1)">−</div>
+          <span class="cart-qty">${qty}</span>
+          <div class="ctrl-btn" onclick="window._changeCart(${i},1)">+</div>
+          <span class="cart-sub">$${sub.toFixed(2)}</span>
+        </div>
+      </div>`;
+    });
+    html += `<div class="cart-total"><span>Subtotal</span><span>$${getTotal().toFixed(2)}</span></div>`;
+    if (tipAmount > 0) html += `<div class="cart-total"><span>Tip</span><span>$${tipAmount.toFixed(2)}</span></div>`;
+    html += `<div class="cart-grand-total"><span>Total</span><span>$${getGrandTotal().toFixed(2)}</span></div>`;
+    el.innerHTML = html;
+    document.getElementById('tipSection').style.display = 'block';
+    updateBtn();
+  }
+
+  function updateBtn() {
+    const hasItems = Object.keys(cart).length > 0;
+    const payReady = selectedPayment === 'venmo' || (selectedPayment === 'cash' && cashConfirmed);
+    document.getElementById('genBtn').disabled = !(hasItems && payReady);
+  }
+
+  window._addToCart = (idx) => { cart[idx] = (cart[idx]||0)+1; renderCart(); };
+  window._changeCart = (idx,delta) => { cart[idx]=(cart[idx]||0)+delta; if(cart[idx]<=0) delete cart[idx]; renderCart(); };
+  window._removeItem = async (idx) => {
+    const item = MENU[idx]; if (!item.custom) return;
+    const {custom,...itemData} = item;
+    try { await updateDoc(doc(db,'config','menu'),{customItems:arrayRemove(itemData)}); } catch(e){console.error(e);}
+    const newCart={};
+    Object.keys(cart).forEach(i=>{ const ni=parseInt(i); if(ni<idx) newCart[ni]=cart[ni]; else if(ni>idx) newCart[ni-1]=cart[ni]; });
+    cart=newCart; MENU=MENU.filter((_,i)=>i!==idx); renderMenu(); renderCart();
+  };
+
+  window.saveCustomItem = async () => {
+    const nameEl=document.getElementById('customName'), priceEl=document.getElementById('customPrice'), errEl=document.getElementById('customError'), btn=document.getElementById('saveCustomBtn');
+    const name=nameEl.value.trim(), price=parseFloat(priceEl.value);
+    if (!name||isNaN(price)||price<=0){errEl.style.display='block';return;}
+    errEl.style.display='none'; btn.disabled=true; btn.textContent='Saving...';
+    const newItem={emoji:'🍹',name,price};
+    try { await setDoc(doc(db,'config','menu'),{customItems:arrayUnion(newItem)},{merge:true}); MENU.push({...newItem,custom:true}); nameEl.value=''; priceEl.value=''; renderMenu(); }
+    catch(e){errEl.textContent='Failed to save.';errEl.style.display='block';console.error(e);}
+    btn.disabled=false; btn.textContent='Add';
+  };
+
+  window.selectTip = (el,pct) => { document.querySelectorAll('.tip-preset').forEach(p=>p.classList.remove('selected')); el.classList.add('selected'); document.getElementById('tipCustom').value=''; tipAmount=pct===0?0:parseFloat((getTotal()*pct/100).toFixed(2)); renderCart(); };
+  window.onCustomTip = () => { document.querySelectorAll('.tip-preset').forEach(p=>p.classList.remove('selected')); const v=parseFloat(document.getElementById('tipCustom').value); tipAmount=isNaN(v)||v<0?0:parseFloat(v.toFixed(2)); renderCart(); };
+
+  window.selectPayment = (method) => {
+    selectedPayment=method; cashConfirmed=false;
+    ['venmo','cash'].forEach(m=>document.getElementById('opt-'+m).classList.toggle('selected',m===method));
+    if (method==='cash'){document.getElementById('cashAmount').textContent='$'+getGrandTotal().toFixed(2);document.getElementById('cashConfirm').style.display='block';}
+    else document.getElementById('cashConfirm').style.display='none';
+    updateBtn();
+  };
+
+  window.confirmCash = (yes) => {
+    if(yes){cashConfirmed=true;document.getElementById('cashConfirm').style.display='none';}
+    else{selectedPayment=null;cashConfirmed=false;['venmo','cash'].forEach(m=>document.getElementById('opt-'+m).classList.remove('selected'));document.getElementById('cashConfirm').style.display='none';}
+    updateBtn();
+  };
+
+  window.generateCode = async () => {
+    const btn=document.getElementById('genBtn'), status=document.getElementById('status');
+    btn.disabled=true; status.textContent='Creating order...';
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const code=Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+    const items={}; Object.keys(cart).forEach(i=>{items[i]={name:MENU[i].name,emoji:MENU[i].emoji,price:MENU[i].price,qty:cart[i]};});
+    const subtotal=getTotal(), total=getGrandTotal();
+    try {
+      await setDoc(doc(db,'orders',code),{items,subtotal,tip:tipAmount,total,payment:selectedPayment,cashPaid:cashConfirmed,createdAt:new Date(),status:cashConfirmed?'paid':'pending',cashier:currentUser.name});
+      document.getElementById('generatedCode').textContent=code;
+      const parts=Object.keys(items).map(i=>`${items[i].emoji} ${items[i].name} ×${items[i].qty}`);
+      const tipNote=tipAmount>0?` + $${tipAmount.toFixed(2)} tip`:'';
+      document.getElementById('codeSummary').textContent=parts.join(' · ')+tipNote+' — $'+total.toFixed(2);
+      const badge=document.getElementById('codeBadge');
+      if(selectedPayment==='cash'){badge.textContent='💵 Cash — already paid';badge.className='code-badge badge-cash';document.getElementById('cashReceivedNote').style.display='flex';}
+      else{badge.textContent='💙 Venmo';badge.className='code-badge badge-digital';document.getElementById('cashReceivedNote').style.display='none';}
+      document.getElementById('buildView').style.display='none';
+      document.getElementById('codeView').style.display='block';
+      status.textContent='';
+      // Generate QR pointing directly to customer site with code pre-filled
+      generateQR(`${CUSTOMER_URL}/?code=${code}`, 'qrCanvas', 200);
+    } catch(e){status.textContent='Error saving order.';btn.disabled=false;console.error(e);}
+  };
+
+  window.resetCashier = () => {
+    cart={}; selectedPayment=null; cashConfirmed=false; tipAmount=0;
+    document.getElementById('tipCustom').value='';
+    document.querySelectorAll('.tip-preset').forEach(p=>p.classList.remove('selected'));
+    document.getElementById('tipSection').style.display='none';
+    ['venmo','cash'].forEach(m=>document.getElementById('opt-'+m).classList.remove('selected'));
+    document.getElementById('cashConfirm').style.display='none';
+    document.getElementById('buildView').style.display='block';
+    document.getElementById('codeView').style.display='none';
+    renderCart();
+  };
+
+  // ── HISTORY ──
+  window.openHistory = async () => {
+    document.getElementById('historyModal').classList.add('open');
+    document.getElementById('historyBody').innerHTML='<div class="loading-msg">Loading orders...</div>';
+    document.getElementById('historySummary').style.display='none';
+    document.getElementById('clearBtn').style.display='none';
+    hideClearConfirm();
+    const isAdmin = currentUser.isAdmin;
+    document.getElementById('historyTitle').textContent = isAdmin ? 'All Order History' : `${currentUser.name}'s Orders`;
+    try {
+      let q;
+      if (isAdmin) {
+        q = query(collection(db,'orders'), orderBy('createdAt','desc'));
+      } else {
+        q = query(collection(db,'orders'), where('cashier','==',currentUser.name), orderBy('createdAt','desc'));
+      }
+      const snap = await getDocs(q);
+      if (snap.empty){document.getElementById('historyBody').innerHTML='<div class="history-empty">No orders yet.</div>';return;}
+      let totalRev=0,paidCount=0,pendingCount=0,html='';
+      snap.forEach(d=>{
+        const o=d.data(), code=d.id;
+        const isPaid=o.status==='paid'||o.cashPaid, isCash=o.cashPaid;
+        if(isPaid) paidCount++; else pendingCount++;
+        totalRev+=isPaid?(o.total||0):0;
+        const itemLines=Object.values(o.items||{}).map(it=>`${it.emoji} ${it.name} ×${it.qty}`).join(', ');
+        const tipLine=(o.tip&&o.tip>0)?` + $${o.tip.toFixed(2)} tip`:'';
+        let time='';
+        if(o.createdAt&&o.createdAt.toDate){const d2=o.createdAt.toDate();time=d2.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' · '+d2.toLocaleDateString([],{month:'short',day:'numeric'});}
+        const badgeClass=isCash?'hbadge-cash':isPaid?'hbadge-paid':'hbadge-pending';
+        const badgeText=isCash?'💵 Cash':isPaid?'💙 Paid':'⏳ Pending';
+        const whoTag=isAdmin&&o.cashier?`<span class="history-who" style="background:#faf6ee;color:#854F0B;">${o.cashier}</span>`:'';
+        html+=`<div class="history-item">
+          <div class="history-item-header">
+            <span class="history-code">${code}</span>
+            <div class="history-meta">${whoTag}<span class="history-time">${time}</span></div>
+          </div>
+          <div class="history-items-list">${itemLines}</div>
+          <div class="history-footer">
+            <span class="history-total">$${(o.total||0).toFixed(2)}${tipLine}</span>
+            <span class="history-badge ${badgeClass}">${badgeText}</span>
+          </div>
+        </div>`;
+      });
+      document.getElementById('historyBody').innerHTML=html;
+      document.getElementById('summaryOrders').textContent=snap.size;
+      document.getElementById('summaryRevenue').textContent='$'+totalRev.toFixed(2);
+      document.getElementById('summaryPaid').textContent=paidCount;
+      document.getElementById('summaryPending').textContent=pendingCount;
+      document.getElementById('historySummary').style.display='flex';
+      document.getElementById('clearBtn').style.display='block';
+    } catch(e){document.getElementById('historyBody').innerHTML='<div class="history-empty">Failed to load. You may need a Firestore index — check the console.</div>';console.error(e);}
+  };
+
+  window.closeHistory=()=>{document.getElementById('historyModal').classList.remove('open');hideClearConfirm();};
+  window.showClearConfirm=()=>{document.getElementById('confirmClear').style.display='block';document.getElementById('clearBtn').style.display='none';};
+  window.hideClearConfirm=()=>{document.getElementById('confirmClear').style.display='none';document.getElementById('clearBtn').style.display='block';};
+  window.clearHistory=async()=>{
+    document.getElementById('confirmClear').style.display='none';
+    document.getElementById('historyBody').innerHTML='<div class="loading-msg">Deleting...</div>';
+    document.getElementById('historySummary').style.display='none';
+    document.getElementById('clearBtn').style.display='none';
+    try {
+      let q;
+      if (currentUser.isAdmin) q=collection(db,'orders');
+      else q=query(collection(db,'orders'),where('cashier','==',currentUser.name));
+      const snap=await getDocs(q);
+      await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,'orders',d.id))));
+      document.getElementById('historyBody').innerHTML='<div class="history-empty">No orders yet.</div>';
+    } catch(e){document.getElementById('historyBody').innerHTML='<div class="history-empty">Failed to delete.</div>';document.getElementById('clearBtn').style.display='block';console.error(e);}
+  };
+
+  // ── ADMIN ──
+  window.openAdmin=()=>{
+    document.getElementById('adminModal').classList.add('open');
+    renderAccountsList();
+  };
+  window.closeAdmin=()=>document.getElementById('adminModal').classList.remove('open');
+
+  function renderAccountsList(){
+    const el=document.getElementById('accountsList');
+    el.innerHTML='';
+    accounts.forEach(acc=>{
+      const wrapper=document.createElement('div');
+      wrapper.innerHTML=`
+        <div class="account-row">
+          <div class="account-info">
+            <div class="account-avatar" style="background:${acc.color};color:#fff;">${acc.name[0].toUpperCase()}</div>
+            <div>
+              <div class="account-name">${acc.name}</div>
+              <div class="account-pin-status">${acc.pin?'PIN set':'No PIN'}</div>
+            </div>
+          </div>
+          <div class="account-btns">
+            <button class="set-pin-btn" onclick="openSetPin('${acc.id}')">${acc.pin?'Change PIN':'Set PIN'}</button>
+            <button class="delete-acc-btn" onclick="showDeleteConfirm('${acc.id}')" title="Delete account">🗑</button>
+          </div>
+        </div>
+        <div class="delete-confirm-row" id="del-${acc.id}">
+          <p>Delete <strong>${acc.name}</strong>? This cannot be undone.</p>
+          <div class="delete-confirm-btns">
+            <button class="delete-yes" onclick="deleteAccount('${acc.id}')">Yes, delete</button>
+            <button class="delete-no" onclick="hideDeleteConfirm('${acc.id}')">Cancel</button>
+          </div>
+        </div>`;
+      el.appendChild(wrapper);
+    });
+  }
+
+  window.showDeleteConfirm=(id)=>{
+    // hide any other open confirms first
+    accounts.forEach(a=>{ const el=document.getElementById('del-'+a.id); if(el) el.style.display='none'; });
+    const el=document.getElementById('del-'+id);
+    if(el) el.style.display='block';
+  };
+  window.hideDeleteConfirm=(id)=>{ const el=document.getElementById('del-'+id); if(el) el.style.display='none'; };
+  window.deleteAccount=async(id)=>{
+    const idx=accounts.findIndex(a=>a.id===id);
+    if(idx===-1)return;
+    const removed=accounts.splice(idx,1)[0];
+    try{
+      await saveAccounts();
+      renderProfiles();
+      renderAccountsList();
+    } catch(e){
+      accounts.splice(idx,0,removed);
       console.error(e);
     }
   };
 
-  window.handlePay = async (method) => {
-    const amount = currentOrder.total.toFixed(2);
-    try { await updateDoc(doc(db, 'orders', currentCode), { status: 'paid' }); } catch (e) { console.error(e); }
-    if (method === 'venmo') {
-      window.location.href = `https://venmo.com/Christian_Schrader?txn=pay&amount=${amount}&note=C%26N%20Lemonade%20Order%20${currentCode}`;
-      showSuccess('💙', 'Venmo opened!', 'Please complete the payment in the Venmo app. Enjoy your lemonade! 🍋');
-    } else {
-      showSuccess('🍎', 'Payment confirmed!', 'Apple Pay went through. Enjoy your lemonade! 🍋');
+  window.addAccount=async()=>{
+    const nameEl=document.getElementById('newAccountName'), errEl=document.getElementById('adminError'), btn=document.getElementById('addAccountBtn');
+    const name=nameEl.value.trim();
+    if(!name){errEl.textContent='Enter a name.';errEl.style.display='block';return;}
+    if(accounts.find(a=>a.name.toLowerCase()===name.toLowerCase())){errEl.textContent='An account with that name already exists.';errEl.style.display='block';return;}
+    errEl.style.display='none'; btn.disabled=true; btn.textContent='Adding...';
+    const colorIdx=accounts.length%COLORS.length;
+    const newAcc={id:name.toLowerCase().replace(/\s+/g,'_')+'_'+Date.now(),name,color:COLORS[colorIdx],emoji:'👤',pin:null};
+    accounts.push(newAcc);
+    try{await saveAccounts();nameEl.value='';renderProfiles();renderAccountsList();}
+    catch(e){errEl.textContent='Failed to save.';errEl.style.display='block';accounts.pop();console.error(e);}
+    btn.disabled=false;btn.textContent='Add Account';
+  };
+
+  // ── SET PIN ──
+  window.openSetPin=(id)=>{
+    spTargetId=id; spEntry=''; spFirstPin=''; spStep='enter';
+    const acc=accounts.find(a=>a.id===id);
+    document.getElementById('setPinTitle').textContent=`Set PIN — ${acc.name}`;
+    document.getElementById('setPinLabel').textContent='Enter new PIN (4 digits)';
+    document.getElementById('setPinError').textContent='';
+    updateSpDots();
+    document.getElementById('setPinModal').classList.add('open');
+  };
+  window.closeSetPin=()=>{document.getElementById('setPinModal').classList.remove('open');};
+
+  window.spPress=(digit)=>{
+    if(spEntry.length>=4)return;
+    spEntry+=digit; updateSpDots();
+    if(spEntry.length===4) setTimeout(handleSpComplete,150);
+  };
+  window.spDelete=()=>{spEntry=spEntry.slice(0,-1);updateSpDots();document.getElementById('setPinError').textContent='';};
+
+  function updateSpDots(){
+    for(let i=0;i<4;i++){
+      const d=document.getElementById('spd'+i);
+      if(!d)return;
+      d.classList.toggle('filled',i<spEntry.length);
+      d.classList.remove('error');
     }
-  };
-
-  function showSuccess(emoji, title, msg) {
-    document.getElementById('successEmoji').textContent = emoji;
-    document.getElementById('successTitle').textContent = title;
-    document.getElementById('successMsg').textContent = msg;
-    document.getElementById('lookupView').style.display = 'none';
-    document.getElementById('orderView').style.display = 'none';
-    document.getElementById('successView').style.display = 'block';
   }
 
-  window.resetCustomer = () => {
-    currentCode = null; currentOrder = null;
-    document.getElementById('codeInput').value = '';
-    document.getElementById('lookupBtn').disabled = false;
-    document.getElementById('lookupBtn').textContent = 'Look up order';
-    document.getElementById('lookupView').style.display = 'block';
-    document.getElementById('orderView').style.display = 'none';
-    document.getElementById('successView').style.display = 'none';
-  };
-
-  document.getElementById('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') window.lookupCode(); });
-
-  // Auto-load if ?code= is in the URL (from QR scan)
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlCode = urlParams.get('code');
-  if (urlCode && urlCode.length === 4) {
-    document.getElementById('codeInput').value = urlCode.toUpperCase();
-    window.lookupCode();
+  async function handleSpComplete(){
+    if(spStep==='enter'){
+      spFirstPin=spEntry; spEntry=''; spStep='confirm';
+      document.getElementById('setPinLabel').textContent='Confirm PIN';
+      updateSpDots();
+    } else {
+      if(spEntry===spFirstPin){
+        const acc=accounts.find(a=>a.id===spTargetId);
+        acc.pin=spEntry;
+        try{
+          await saveAccounts();
+          document.getElementById('setPinModal').classList.remove('open');
+          renderAccountsList();
+        } catch(e){document.getElementById('setPinError').textContent='Failed to save.';console.error(e);}
+      } else {
+        for(let i=0;i<4;i++){const d=document.getElementById('spd'+i);if(d)d.classList.add('error');}
+        document.getElementById('setPinError').textContent="PINs don't match, try again";
+        setTimeout(()=>{spEntry='';spFirstPin='';spStep='enter';updateSpDots();document.getElementById('setPinLabel').textContent='Enter new PIN (4 digits)';document.getElementById('setPinError').textContent='';},1200);
+      }
+    }
   }
+
+  // ── SHARED OVERLAY CLICK ──
+  window.handleOverlayClick=(e,id)=>{if(e.target===document.getElementById(id)){if(id==='historyModal')closeHistory();else if(id==='adminModal')closeAdmin();else if(id==='setPinModal')closeSetPin();}};
+
+  // ── KEYBOARD SUPPORT ──
+  document.addEventListener('keydown',(e)=>{
+    if(document.getElementById('pinScreen').classList.contains('active')){
+      if(e.key>='0'&&e.key<='9')pinPress(e.key);
+      if(e.key==='Backspace')pinDelete();
+    }
+  });
+
+  // ── INIT ──
+  loadAccounts();
 </script>
 </body>
 </html>
