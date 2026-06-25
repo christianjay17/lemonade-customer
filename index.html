@@ -165,7 +165,7 @@
     const amount = currentOrder.total.toFixed(2);
     try { await updateDoc(doc(db, 'orders', currentCode), { status: 'paid' }); } catch (e) { console.error(e); }
     if (method === 'venmo') {
-      window.location.href = `https://venmo.com/Christian_Schrader?txn=pay&amount=${amount}&note=C%26N%20Lemonade%20Order%20${currentCode}`;
+      window.location.href = `https://venmo.com/Test_Account?txn=pay&amount=${amount}&note=C%26N%20Lemonade%20Order%20${currentCode}`;
       showSuccess('💙', 'Venmo opened!', 'Please complete the payment in the Venmo app. Enjoy your lemonade! 🍋');
     } else {
       showSuccess('🍎', 'Payment confirmed!', 'Apple Pay went through. Enjoy your lemonade! 🍋');
